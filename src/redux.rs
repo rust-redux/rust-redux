@@ -5,8 +5,7 @@ pub struct State {
 }
 
 impl State {
-    // This gives us a quick way to initialize a default state with State::default()
-    pub fn default() -> State {
+    pub fn with_defaults() -> State {
         State {
             todos: Vec::new(),
             visibility_filter: VisibilityFilter::ShowAll,
@@ -64,7 +63,7 @@ pub struct Store {
 impl Store {
     pub fn create_store(reducer: fn(State, Action) -> State) -> Store {
         Store {
-            state: State::default(),
+            state: State::with_defaults(),
             listeners: Vec::new(),
             reducer: reducer,
         }
