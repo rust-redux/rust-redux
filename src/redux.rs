@@ -1,37 +1,32 @@
-// Redux store implementation
+// Unit struct, basically a generic holder
+pub struct State;
+
 #[allow(dead_code)]
-pub struct Store {
-    state: i32,
-    listeners: Vec<fn(i32)>,
-    reducer: fn(i32, Action) -> i32,
+pub struct Store<T> {
+    state: T,
+    listeners: Vec<fn(T)>,
+    reducer: fn(T, Action) -> T,
 }
 
 #[allow(dead_code)]
-pub enum Action {
-    Increment,
-    Decrement
-}
-
-#[allow(dead_code)]
-impl Store {
-    // Takes a reducer function, we skip the initial_state and optional arguments
-    // TO keep it simple, State::default() from earlier is our initial_state implementation
-    pub fn create_store(reducer: fn(i32, Action) -> i32) -> Store {
+impl<T: Clone> Store<T> {
+    pub fn create_store(reducer: fn(T, Action) -> T) -> Store<T> {
+        let zero: i32 = 0;
         Store {
-            state: 0,
+            state: zero,
             listeners: Vec::new(),
             reducer: reducer,
         }
     }
 
     // Pushes a listener that will be called for any state change
-    pub fn subscribe(&mut self, listener: fn(i32)) {
+    pub fn subscribe(&mut self, listener: fn(T)) {
         self.listeners.push(listener);
     }
 
     // Simply returns the state
     #[allow(dead_code)]
-    pub fn get_state(&self) -> i32 {
+    pub fn get_state(&self) -> T {
         self.state
     }
 
@@ -40,7 +35,7 @@ impl Store {
     pub fn dispatch(&mut self, action: Action) {
         self.state = (self.reducer)(self.state, action);
         for i in 0..self.listeners.len() {
-            self.listeners[i](self.state.clone());
+            self.listeners[i](self.state);
         }
     }
 }
