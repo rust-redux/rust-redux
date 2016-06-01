@@ -1,82 +1,30 @@
-#[derive(Clone, Debug)]
-pub struct State {
-    pub todos: Vec<Todo>,
-    pub visibility_filter: VisibilityFilter
-}
+use std::clone::Clone;
 
-impl State {
-    pub fn with_defaults() -> State {
-        State {
-            todos: Vec::new(),
-            visibility_filter: VisibilityFilter::ShowAll,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Todo {
-    pub id: i16,
-    pub title: String,
-    pub completed: bool,
-    pub deleted: bool,
-}
-
-impl Todo {
-    pub fn new(id: i16, title: String) -> Todo {
-        Todo {
-            id: id,
-            title: title,
-            completed: false,
-            deleted: false,
-        }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub enum Action {
-    Todos(TodoAction),
-    Visibility(VisibilityFilter),
-}
-
-#[derive(Clone, Debug)]
-pub enum TodoAction {
-    Add(String),
-    Toggle(i16),
-    Remove(i16),
-}
-
-#[derive(Clone, Debug)]
-pub enum VisibilityFilter {
-    ShowActive,
-    ShowAll,
-    ShowCompleted,
+#[allow(dead_code)]
+pub struct Store<T: Clone, U> {
+    state: T,
+    listeners: Vec<fn(T)>,
+    reducer: fn(T,U) -> T,
 }
 
 #[allow(dead_code)]
-pub struct Store {
-    state: State,
-    listeners: Vec<fn(State)>,
-    reducer: fn(State, Action) -> State,
-}
-
-#[allow(dead_code)]
-impl Store {
-    pub fn create_store(reducer: fn(State, Action) -> State) -> Store {
+impl<T: Clone, U> Store<T, U> {
+    pub fn create_store(reducer: fn(T, U) -> T, initial_state: T) -> Store<T, U> {
         Store {
-            state: State::with_defaults(),
+            state: initial_state,
             listeners: Vec::new(),
             reducer: reducer,
         }
     }
-    pub fn subscribe(&mut self, listener: fn(State)) {
+    pub fn subscribe(&mut self, listener: fn(T)) {
         self.listeners.push(listener);
     }
 
-    pub fn get_state(&self) -> State {
+    pub fn get_state(&self) -> T {
         self.state.clone()
     }
 
-    pub fn dispatch(&mut self, action: Action) {
+    pub fn dispatch(&mut self, action: U) {
         self.state = (self.reducer)(self.state.clone(), action);
         for i in 0..self.listeners.len() {
             self.listeners[i](self.state.clone());
