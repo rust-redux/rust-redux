@@ -59,7 +59,7 @@ pub enum VisibilityFilter {
     ShowCompleted,
 }
 
-fn reducer(state: State, action: Action) -> State {
+fn reducer(state: &State, action: Action) -> State {
     // Always return a new state
     State {
         todos: todo_reducer(&state.todos, &action),
@@ -121,7 +121,7 @@ fn invalid_command(command: &str) {
     println!("Invalid command: {}", command);
 }
 
-fn render(state: State) {
+fn render(state: &State) {
     let visibility = &state.visibility_filter;
     println!("\n\nTodo List:\n-------------------");
     for i in 0..state.todos.len() {
