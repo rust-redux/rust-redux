@@ -35,7 +35,6 @@ impl State {
 
 Your state model does not have to be named "State" or have any specific methods of its own. However, it is useful to have a method similar to with_defaults as we'll need to pass some default values into `Store::create_store()`.
 
-`let mut store = Store::create_store(root_reducer,State::with_defaults());`
 
 ### 3. Creating a Root Reducer
 You can think of root reducer as the rust-redux substitute for combineReducers in reduxjs. Our root reducer just needs to return our State model where each property in our model is set to the return value of its individual reducer(We'll talk more about individual state reducers later on). The root reducer must be of type: `fn(&T, U) -> T`
@@ -108,7 +107,7 @@ fn todo_reducer(state: &Vec<Todo>, action: &Action) -> Vec<Todo> {
 Another aspect of reduxjs that we want to adapt is avoiding direct mutation of the store's state. As you can see here we create a clone of the state that is passed in and mutate the clone's properties instead of the state reference that was passed to the reducer. Mutating the passed in state in this example isn't actually possible as our todo_reducer does not accept a mutable reference to `Vec<Todo>`.
 
 ### 6. Putting it All Together
-Now that we have all of our pieces in place let's subscribe, dispatch, and get our store's state!
+Now that we have all of our pieces in place, let's subscribe, dispatch, and get our store's state!
 ### Dispatching Actions
 ```
 use Action::*;
