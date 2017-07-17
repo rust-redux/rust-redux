@@ -1,6 +1,6 @@
 [package]
-name = "rust-redux"
+name = "redux"
 version = "0.1.0"
-authors = ["Fredrik Andersson <fredrik.andersson@widespace.com>"]
+authors = ["marsha88 <marsha88@purdue.edu>"]
 
 [dependencies]

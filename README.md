@@ -11,7 +11,8 @@ This is a demo and nothing else at this point. `src/redux.rs` has the barebones 
 ### 1. Creating a Store
 
 `let mut store = Store::create_store(root_reducer,State::with_defaults());`
-This is a standard store creation. Before creating a store you will need to create a state model of what our store will be storing. We also need a root reducer function that will return an instance of your redux state model that calls your other individual reducers. Let's start by building our state model.
+
+This is a standard store creation. Before creating a store you will need to create a state model of what our store will be storing. We also need a root reducer function that will return an instance of out redux state model that calls your other individual reducers. Let's start by building our state model.
 
 ### 2. Creating State Model
 The State type seen below that is used in the to-do list example contains all parts of our rust-redux state.
