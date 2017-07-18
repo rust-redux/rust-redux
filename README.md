@@ -5,13 +5,13 @@ An attempt to implement Redux for Rust at the React Europe hackathon.
 No matter what language you are writing the structured way redux handles state is still a very useful pattern.
 
 ## Current state of the project
-This is a demo and nothing else at this point. `src/lib.rs` has the barebones Redux implementation and `src/main.rs` uses redux to handle the state of a to-do app.
+This is a demo and nothing else at this point. `src/lib.rs` has the barebones Redux implementation and `examples/todo_list` uses redux to handle the state of a todo app.
 
 
 ## Running To-Do List Example
 ```
 git clone https://github.com/fanderzon/rust-redux.git
-cd rust-redux
+cd rust-redux/examples/todo_list
 cargo run
 ```
 
