@@ -20,10 +20,10 @@ cargo run
 
 `let mut store = Store::create_store(root_reducer,State::with_defaults());`
 
-This is a standard store creation. Before creating a store you will need to create a state model of what our store will be storing. We also need a root reducer function that will return an instance of out redux state model that calls your other individual reducers. Let's start by building our state model.
+This is a standard store creation. Before creating a store you will need to create a state model of what our store will be storing. We also need a root reducer function that will return an instance of our redux state model that calls our other individual reducers. Let's start by building our state model.
 
 ### 2. Creating State Model
-The State type seen below that is used in the to-do list example contains all parts of our rust-redux state.
+The State type seen below that is used in the todo_list example contains all parts of our rust-redux state.
 
 ```
 #[derive(Clone, Debug)]
@@ -46,7 +46,7 @@ Your state model does not have to be named "State" or have any specific methods 
 
 
 ### 3. Creating a Root Reducer
-You can think of root reducer as the rust-redux substitute for combineReducers in reduxjs. Our root reducer just needs to return our State model where each property in our model is set to the return value of its individual reducer(We'll talk more about individual state reducers later on). The root reducer must be of type: `fn(&T, U) -> T`
+You can think of root reducer as the rust-redux substitute for combineReducers in reduxjs. Our root reducer just needs to return our State model where each property in our model is set to the return value of its individual reducer (We'll talk more about individual state reducers later on). The root reducer must be of type: `fn(&T, U) -> T`
 ```
 fn root_reducer(state: &State, action: Action) -> State {
     State {
