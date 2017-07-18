@@ -1,6 +1,7 @@
+extern crate rust_redux;
+
 use std::io;
-mod redux;
-use redux::{ Store };
+use rust_redux::{ Store };
 use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
