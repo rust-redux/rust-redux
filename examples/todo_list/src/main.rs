@@ -142,7 +142,6 @@ fn render(state: &State) {
     print_instructions();
 }
 
-//logger middleware that will write the state and action that updated it to a new file.
 #[allow(unused_must_use)]
 fn logger(state: &State, action: &Action){
 
