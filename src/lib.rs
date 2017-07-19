@@ -4,13 +4,13 @@ use std::clone::Clone;
 pub struct Store<T: Clone, U> {
     state: T,
     listeners: Vec<fn(&T)>,
-    middlewares: Vec<fn(&T, U)>,
-    reducer: fn(&T,U) -> T,
+    middlewares: Vec<fn(&T, &U)>,
+    reducer: fn(&T,&U) -> T,
 }
 
 #[allow(dead_code)]
 impl<T: Clone, U> Store<T, U> {
-    pub fn create_store(reducer: fn(&T, U) -> T, initial_state: T) -> Store<T, U> {
+    pub fn create_store(reducer: fn(&T, &U) -> T, initial_state: T) -> Store<T, U> {
         Store {
             state: initial_state,
             listeners: Vec::new(),
@@ -23,7 +23,7 @@ impl<T: Clone, U> Store<T, U> {
         self.listeners.push(listener);
     }
 
-    pub fn apply_middleware(&mut self, middleware: fn(&T, U)) {
+    pub fn apply_middleware(&mut self, middleware: fn(&T, &U)) {
         self.middlewares.push(middleware);
     }
 
@@ -32,10 +32,12 @@ impl<T: Clone, U> Store<T, U> {
     }
 
     pub fn dispatch(&mut self, action:U) {
-        self.state = (self.reducer)(&self.state, action.clone());
+        self.state = (self.reducer)(&self.state, &action );
+
         for middleware in &self.middlewares{
-            middleware(&self.state, action.clone());
+            middleware(&self.state, &action);
         }
+
         for listener in &self.listeners {
             listener(&self.state)
         }

@@ -5,6 +5,8 @@ use rust_redux::{ Store };
 use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
+use std::fs::File;
+use std::io::prelude::*;
 
 #[derive(Clone, Debug)]
 pub struct State {
@@ -60,11 +62,11 @@ pub enum VisibilityFilter {
     ShowCompleted,
 }
 
-fn reducer(state: &State, action: Action) -> State {
+fn reducer(state: &State, action: &Action) -> State {
     // Always return a new state
     State {
-        todos: todo_reducer(&state.todos, &action),
-        visibility_filter: visibility_reducer(&state.visibility_filter, &action),
+        todos: todo_reducer(&state.todos, action),
+        visibility_filter: visibility_reducer(&state.visibility_filter, action),
     }
 }
 
@@ -139,9 +141,10 @@ fn render(state: &State) {
     print_instructions();
 }
 
-fn logger(state: &State, action: Action){
-    //write to separate file.
-    println!("{:?}", state.todos);
+//logger middleware that will write the state and action that updated it to a new file.
+fn logger(state: &State, action: &Action){
+    let mut logger_file = File::create("logger.txt")?;
+    logger_file.write("MiddleWAREEEE.")?;
 }
 
 fn main() {
