@@ -5,7 +5,8 @@ use rust_redux::{ Store };
 use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
-use std::fs::File;
+
+use std::fs::OpenOptions;
 use std::io::prelude::*;
 
 #[derive(Clone, Debug)]
@@ -142,9 +143,26 @@ fn render(state: &State) {
 }
 
 //logger middleware that will write the state and action that updated it to a new file.
+#[allow(unused_must_use)]
 fn logger(state: &State, action: &Action){
-    let mut logger_file = File::create("logger.txt")?;
-    logger_file.write("MiddleWAREEEE.")?;
+
+    let mut log_file = OpenOptions::new()
+                            .write(true)
+                            .create(true)
+                            .append(true)
+                            .open("log.txt")
+                            .expect("Failed to open log file.");
+    log_file.write(b"----------------------------------------------------\n");
+    log_file.write(format!("ACTION DISPATCHED: {:?}\n", action).as_bytes());
+    log_file.write(b"***************************************************\n");
+    log_file.write(b"UPDATED STATE\n");
+    log_file.write(b"***************************************************\n");
+    log_file.write(format!("Visibility: {:?}\n", state.visibility_filter).as_bytes());
+    log_file.write(b"Todo List: \n");
+    for todo in &state.todos{
+        log_file.write(format!("{:?}\n", todo).as_bytes());
+    }
+    log_file.write(b"----------------------------------------------------\n\n\n");
 }
 
 fn main() {
@@ -156,8 +174,8 @@ fn main() {
     loop {
         let mut command = String::new();
         io::stdin()
-            .read_line(&mut command)
-            .expect("failed to read line");
+        .read_line(&mut command)
+        .expect("failed to read line");
         let command_parts: Vec<&str> = command.split_whitespace().collect();
 
         match command_parts.len() {
