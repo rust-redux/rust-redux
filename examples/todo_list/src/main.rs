@@ -139,9 +139,15 @@ fn render(state: &State) {
     print_instructions();
 }
 
+fn logger(state: &State, action: Action){
+    //write to separate file.
+    println!("{:?}", state.todos);
+}
+
 fn main() {
     let mut store = Store::create_store(reducer, State::with_defaults());
     store.subscribe(render);
+    store.apply_middleware(logger);
 
     print_instructions();
     loop {
