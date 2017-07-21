@@ -133,9 +133,16 @@ fn update_with_new_state(state: &State) {
 	let visibility = &state.visibility_filter;
 	println!("Visibility filter updated to:  {:?}", visibility);
 }
+
+fn simple_subscribe(state: &State) {
+  println!("nice dispatch!");
+}
+
 fn main(){
 	let mut store = Store::create_store(reducer, State::with_defaults());
-	store.subscribe(update_with_new_state);
+  //subscribe methods can be chained together
+	store.subscribe(update_with_new_state)
+       .subscribe(simple_subscribe);
 }
 ```
 ### Getting State
