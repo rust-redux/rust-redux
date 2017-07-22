@@ -16,8 +16,9 @@ impl<T: Clone, U> Store<T, U> {
             reducer: reducer,
         }
     }
-    pub fn subscribe(&mut self, listener: fn(&T)) {
+    pub fn subscribe(&mut self, listener: fn(&T)) -> &mut Store<T, U> {
         self.listeners.push(listener);
+        self
     }
 
     pub fn get_state(&self) -> &T {
