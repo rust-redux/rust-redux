@@ -46,12 +46,12 @@ Your state model does not have to be named "State" or have any specific methods 
 
 
 ### 3. Creating a Root Reducer
-You can think of root reducer as the rust-redux substitute for combineReducers in reduxjs. Our root reducer just needs to return our State model where each property in our model is set to the return value of its individual reducer (We'll talk more about individual state reducers later on). The root reducer must be of type: `fn(&T, U) -> T`
+You can think of root reducer as the rust-redux substitute for combineReducers in reduxjs. Our root reducer just needs to return our State model where each property in our model is set to the return value of its individual reducer (We'll talk more about individual state reducers later on). The root reducer must be of type: `fn(&T, &U) -> T`
 ```
-fn root_reducer(state: &State, action: Action) -> State {
+fn root_reducer(state: &State, action: &Action) -> State {
     State {
-        todos: todo_reducer(&state.todos, &action),
-        visibility_filter: visibility_reducer(&state.visibility_filter,&action),
+        todos: todo_reducer(&state.todos, action),
+        visibility_filter: visibility_reducer(&state.visibility_filter, action),
     }
 }
 ```
@@ -154,3 +154,21 @@ fn main(){
     let myCurrentState = store.get_state();
 }
 ```
+
+### Adding Middleware
+The current implementation of middleware allows you to pass a function to the store that will be run
+each time an action is dispatched with the updated state and the action that was dispatched.
+Middleware function must be of type: `fn(&T, &U)`.
+```
+fn simple_logger(state: &State, action: &Action){
+  println!("Dispatched action {:?}. To-do list now contains: {:?}", action, state.todos);
+}
+
+fn main(){
+  let mut store = Store::create_store(reducer, State::with_defaults());
+  store.apply_middleware(simple_logger);
+}
+```
+### Additional Examples
+For more in depth examples that cover all of the above topics, take a look at the full-length todo_list
+example in `examples/todo_list`.
