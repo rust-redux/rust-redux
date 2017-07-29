@@ -6,6 +6,9 @@ use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
 
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+
 #[derive(Clone, Debug)]
 pub struct State {
     pub todos: Vec<Todo>,
@@ -60,11 +63,11 @@ pub enum VisibilityFilter {
     ShowCompleted,
 }
 
-fn reducer(state: &State, action: Action) -> State {
+fn reducer(state: &State, action: &Action) -> State {
     // Always return a new state
     State {
-        todos: todo_reducer(&state.todos, &action),
-        visibility_filter: visibility_reducer(&state.visibility_filter, &action),
+        todos: todo_reducer(&state.todos, action),
+        visibility_filter: visibility_reducer(&state.visibility_filter, action),
     }
 }
 
@@ -139,16 +142,43 @@ fn render(state: &State) {
     print_instructions();
 }
 
+#[allow(unused_must_use)]
+fn logger(state: &mut State, action: &Action) {
+    let mut log_file = OpenOptions::new()
+    .write(true)
+    .create(true)
+    .append(true)
+    .open("log.txt")
+    .expect("Failed to open log file.");
+    log_file.write(b"----------------------------------------------------\n");
+    log_file.write(format!("ACTION DISPATCHED: {:?}\n", action).as_bytes());
+    log_file.write(b"***************************************************\n");
+    log_file.write(b"UPDATED STATE\n");
+    log_file.write(b"***************************************************\n");
+    log_file.write(format!("Visibility: {:?}\n", state.visibility_filter).as_bytes());
+    log_file.write(b"Todo List: \n");
+    for todo in &state.todos{
+        log_file.write(format!("{:?}\n", todo).as_bytes());
+    }
+    log_file.write(b"----------------------------------------------------\n\n\n");
+}
+
+fn mutate_state(state: &mut State, action: &Action) {
+    state.visibility_filter = ShowAll;
+}
+
 fn main() {
     let mut store = Store::create_store(reducer, State::with_defaults());
-    store.subscribe(render);
+    store.subscribe(render)
+    .apply_middleware(logger)
+    .apply_middleware(mutate_state);
 
     print_instructions();
     loop {
         let mut command = String::new();
         io::stdin()
-            .read_line(&mut command)
-            .expect("failed to read line");
+        .read_line(&mut command)
+        .expect("failed to read line");
         let command_parts: Vec<&str> = command.split_whitespace().collect();
 
         match command_parts.len() {
