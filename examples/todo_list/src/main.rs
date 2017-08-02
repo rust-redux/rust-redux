@@ -143,7 +143,7 @@ fn render(state: &State) {
 }
 
 #[allow(unused_must_use)]
-fn logger(state: &mut State, action: &Action) {
+fn logger(state: &mut Store, action: &Action) {
     let mut log_file = OpenOptions::new()
     .write(true)
     .create(true)
@@ -163,15 +163,13 @@ fn logger(state: &mut State, action: &Action) {
     log_file.write(b"----------------------------------------------------\n\n\n");
 }
 
-fn mutate_state(state: &mut State, action: &Action) {
+fn mutate_state(store:&mut Store, action:&Action) {
     state.visibility_filter = ShowAll;
 }
 
 fn main() {
     let mut store = Store::create_store(reducer, State::with_defaults());
-    store.subscribe(render)
-    .apply_middleware(logger)
-    .apply_middleware(mutate_state);
+    store.subscribe(render);
 
     print_instructions();
     loop {
