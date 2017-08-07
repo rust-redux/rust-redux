@@ -9,6 +9,10 @@ use VisibilityFilter::*;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
+trait UpdateFields <T> {
+    fn update_fields<T>(&self) -> T;
+}
+
 #[derive(Clone, Debug)]
 pub struct State {
     pub todos: Vec<Todo>,
@@ -21,6 +25,12 @@ impl State {
             todos: Vec::new(),
             visibility_filter: VisibilityFilter::ShowAll,
         }
+    }
+}
+
+impl UpdateFields <T> for T {
+    fn update_fields <T>(&self) -> T {
+
     }
 }
 

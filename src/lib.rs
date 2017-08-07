@@ -31,12 +31,13 @@ impl<T: Clone, U> Store<T, U> {
         self
     }
 
-    pub fn get_state(&self) -> Ref<T> {
-        self.state.borrow()
+    pub fn get_state(&self) -> T {
+        *self.state.borrow()
     }
 
     pub fn dispatch(&self, action:U) {
-        (self.reducer)(self.state.borrow_mut(), &action);
+        //force the State struct to have an updateFields method
+        self.state.borrow_mut().update_fields((self.reducer)(self.state.borrow_mut(), &action));
 
         for middleware in self.middlewares.borrow().iter(){
             middleware(self, &action);
