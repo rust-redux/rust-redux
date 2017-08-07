@@ -9,10 +9,6 @@ use VisibilityFilter::*;
 use std::fs::OpenOptions;
 use std::io::prelude::*;
 
-trait UpdateFields <T> {
-    fn update_fields<T>(&self) -> T;
-}
-
 #[derive(Clone, Debug)]
 pub struct State {
     pub todos: Vec<Todo>,
