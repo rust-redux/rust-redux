@@ -5,7 +5,7 @@ use std::cell::RefMut;
 
 // allows the Store's state to be updated without reducers directly mutating the Store.
 pub trait Update_Fields <T> {
-    fn update_fields(&self, T);
+    fn update_fields(&mut self, T);
 }
 
 #[allow(dead_code)]
@@ -13,12 +13,12 @@ pub struct Store<T: Clone + Update_Fields<T>, U> {
     state: RefCell<T>,
     listeners: RefCell<Vec<fn(Ref<T>)>>,
     middlewares: RefCell<Vec<fn(&Store<T,U>, &U)>>,
-    reducer: fn(RefMut<T>,&U) -> T,
+    reducer: fn(Ref<T>,&U) -> T,
 }
 
 #[allow(dead_code)]
 impl<T: Clone + Update_Fields<T>, U> Store<T, U> {
-    pub fn create_store(reducer: fn(RefMut<T>, &U) -> T, initial_state: T) -> Store<T, U> {
+    pub fn create_store(reducer: fn(Ref<T>, &U) -> T, initial_state: T) -> Store<T, U> {
         Store {
             state: RefCell::new(initial_state),
             listeners: RefCell::new(Vec::new()),
@@ -41,7 +41,7 @@ impl<T: Clone + Update_Fields<T>, U> Store<T, U> {
     }
 
     pub fn dispatch(&self, action:U) {
-        self.state.borrow_mut().update_fields((self.reducer)(self.state.borrow_mut(), &action));
+        self.state.borrow().update_fields((self.reducer)(self.state.borrow(), &action));
 
         for middleware in self.middlewares.borrow().iter(){
             middleware(self, &action);

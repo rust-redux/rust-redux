@@ -1,13 +1,14 @@
 extern crate rust_redux;
 
 use std::io;
-use rust_redux::{ Store };
+use rust_redux::{ Store, Update_Fields };
 use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
 
 use std::fs::OpenOptions;
 use std::io::prelude::*;
+use std::cell::Ref;
 
 #[derive(Clone, Debug)]
 pub struct State {
@@ -24,9 +25,10 @@ impl State {
     }
 }
 
-impl UpdateFields <T> for T {
-    fn update_fields <T>(&self) -> T {
-
+impl Update_Fields <State> for State {
+    fn update_fields(&mut self, updates: State){
+        self.todos = updates.todos;
+        self.visibility_filter = updates.visibility_filter;
     }
 }
 
@@ -69,7 +71,7 @@ pub enum VisibilityFilter {
     ShowCompleted,
 }
 
-fn reducer(state: &State, action: &Action) -> State {
+fn reducer(state: Ref<State>, action: &Action) -> State {
     // Always return a new state
     State {
         todos: todo_reducer(&state.todos, action),
@@ -131,7 +133,7 @@ fn invalid_command(command: &str) {
     println!("Invalid command: {}", command);
 }
 
-fn render(state: &State) {
+fn render(state: Ref<State>) {
     let visibility = &state.visibility_filter;
     println!("\n\nTodo List:\n-------------------");
     for i in 0..state.todos.len() {
@@ -149,7 +151,7 @@ fn render(state: &State) {
 }
 
 #[allow(unused_must_use)]
-fn logger(state: &mut Store, action: &Action) {
+fn logger(state: Ref<State>, action: &Action) {
     let mut log_file = OpenOptions::new()
     .write(true)
     .create(true)
@@ -169,12 +171,9 @@ fn logger(state: &mut Store, action: &Action) {
     log_file.write(b"----------------------------------------------------\n\n\n");
 }
 
-fn mutate_state(store:&mut Store, action:&Action) {
-    state.visibility_filter = ShowAll;
-}
 
 fn main() {
-    let mut store = Store::create_store(reducer, State::with_defaults());
+    let store = Store::create_store(reducer, State::with_defaults());
     store.subscribe(render);
 
     print_instructions();
