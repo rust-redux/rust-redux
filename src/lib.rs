@@ -41,7 +41,8 @@ impl<T: Clone + Update_Fields<T>, U> Store<T, U> {
     }
 
     pub fn dispatch(&self, action:U) {
-        self.state.borrow().update_fields((self.reducer)(self.state.borrow(), &action));
+        let stateUpdates:T = (self.reducer)(self.state.borrow(), &action);
+        self.state.borrow_mut().update_fields(stateUpdates);
 
         for middleware in self.middlewares.borrow().iter(){
             middleware(self, &action);
