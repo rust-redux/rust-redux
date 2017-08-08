@@ -1,7 +1,7 @@
 [package]
 name = "rust_redux"
 version = "0.1.0"
-authors = ["Fredrik Andersson <fredrik.andersson@widespace.com>"]
+authors = ["Fredrik Andersson <fredrik.andersson@widespace.com>, Clayton Marshall <marsha88@purdue.edu>"]
 repository = "https://github.com/fanderzon/rust-redux.git"
 license = "MIT"
 readme = "README.md"

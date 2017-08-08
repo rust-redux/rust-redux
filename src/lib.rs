@@ -1,34 +1,60 @@
 use std::clone::Clone;
+use std::cell::RefCell;
+
+#[derive(Copy, Clone)]
+struct StateContainer<T: Clone> {
+    inner_state: T
+}
+
+impl <T:Clone> StateContainer<T> {
+    fn new(state:T) -> StateContainer<T>{
+        StateContainer{ inner_state: state }
+    }
+}
 
 #[allow(dead_code)]
 pub struct Store<T: Clone, U> {
-    state: T,
+    state: RefCell<StateContainer<T>>,
     listeners: Vec<fn(&T)>,
-    reducer: fn(&T,U) -> T,
+    middlewares: Vec<fn(&Store<T,U>, &U)>,
+    reducer: fn(&T,&U) -> T,
 }
 
 #[allow(dead_code)]
 impl<T: Clone, U> Store<T, U> {
-    pub fn create_store(reducer: fn(&T, U) -> T, initial_state: T) -> Store<T, U> {
+    pub fn create_store(reducer: fn(&T, &U) -> T, initial_state: T) -> Store<T, U> {
         Store {
-            state: initial_state,
+            state: RefCell::new(StateContainer::new(initial_state)),
             listeners: Vec::new(),
-            reducer: reducer,
+            middlewares: Vec::new(),
+            reducer: reducer
         }
     }
-    pub fn subscribe(&mut self, listener: fn(&T)) -> &mut Store<T, U> {
+
+    pub fn subscribe(&mut self, listener: fn(&T)) -> &Store<T, U> {
         self.listeners.push(listener);
         self
     }
 
-    pub fn get_state(&self) -> &T {
-        &self.state
+    pub fn apply_middleware(&mut self, middleware:fn(&Store<T,U>, &U)) -> &Store<T,U> {
+        self.middlewares.push(middleware);
+        self
     }
 
-    pub fn dispatch(&mut self, action: U) {
-        self.state = (self.reducer)(&self.state, action);
+    pub fn get_state(&self) -> T {
+        self.state.borrow().inner_state.clone()
+    }
+
+    pub fn dispatch(&self, action:U) {
+        let updated_state = (self.reducer)(&self.state.borrow().inner_state, &action);
+        self.state.borrow_mut().inner_state = updated_state;
+
+        for middleware in &self.middlewares{
+            middleware(self, &action);
+        }
+
         for listener in &self.listeners {
-            listener(&self.state)
+            listener(&self.state.borrow().inner_state)
         }
     }
 }
