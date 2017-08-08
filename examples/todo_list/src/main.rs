@@ -1,7 +1,7 @@
 extern crate rust_redux;
 
 use std::io;
-use rust_redux::{ Store, Update_Fields };
+use rust_redux::Store;
 use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
@@ -22,13 +22,6 @@ impl State {
             todos: Vec::new(),
             visibility_filter: VisibilityFilter::ShowAll,
         }
-    }
-}
-
-impl Update_Fields <State> for State {
-    fn update_fields(&mut self, updates: State){
-        self.todos = updates.todos;
-        self.visibility_filter = updates.visibility_filter;
     }
 }
 
@@ -71,7 +64,7 @@ pub enum VisibilityFilter {
     ShowCompleted,
 }
 
-fn reducer(state: Ref<State>, action: &Action) -> State {
+fn reducer(state: &State, action: &Action) -> State {
     // Always return a new state
     State {
         todos: todo_reducer(&state.todos, action),
@@ -133,7 +126,7 @@ fn invalid_command(command: &str) {
     println!("Invalid command: {}", command);
 }
 
-fn render(state: Ref<State>) {
+fn render(state: &State) {
     let visibility = &state.visibility_filter;
     println!("\n\nTodo List:\n-------------------");
     for i in 0..state.todos.len() {
@@ -173,7 +166,7 @@ fn logger(state: Ref<State>, action: &Action) {
 
 
 fn main() {
-    let store = Store::create_store(reducer, State::with_defaults());
+    let mut store = Store::create_store(reducer, State::with_defaults());
     store.subscribe(render);
 
     print_instructions();

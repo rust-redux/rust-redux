@@ -1,55 +1,60 @@
 use std::clone::Clone;
 use std::cell::RefCell;
-use std::cell::Ref;
-use std::cell::RefMut;
 
-// allows the Store's state to be updated without reducers directly mutating the Store.
-pub trait Update_Fields <T> {
-    fn update_fields(&mut self, T);
+#[derive(Copy, Clone)]
+struct StateContainer<T: Clone> {
+    inner_state: T
+}
+
+impl <T:Clone> StateContainer<T> {
+    fn new(state:T) -> StateContainer<T>{
+        StateContainer{ inner_state: state }
+    }
 }
 
 #[allow(dead_code)]
-pub struct Store<T: Clone + Update_Fields<T>, U> {
-    state: RefCell<T>,
-    listeners: RefCell<Vec<fn(Ref<T>)>>,
-    middlewares: RefCell<Vec<fn(&Store<T,U>, &U)>>,
-    reducer: fn(Ref<T>,&U) -> T,
+pub struct Store<T: Clone, U> {
+    state: RefCell<StateContainer<T>>,
+    listeners: Vec<fn(&T)>,
+    middlewares: Vec<fn(&Store<T,U>, &U)>,
+    reducer: fn(&T,&U) -> T,
 }
 
 #[allow(dead_code)]
-impl<T: Clone + Update_Fields<T>, U> Store<T, U> {
-    pub fn create_store(reducer: fn(Ref<T>, &U) -> T, initial_state: T) -> Store<T, U> {
+impl<T: Clone, U> Store<T, U> {
+    pub fn create_store(reducer: fn(&T, &U) -> T, initial_state: T) -> Store<T, U> {
         Store {
-            state: RefCell::new(initial_state),
-            listeners: RefCell::new(Vec::new()),
-            middlewares: RefCell::new(Vec::new()),
+            state: RefCell::new(StateContainer::new(initial_state)),
+            listeners: Vec::new(),
+            middlewares: Vec::new(),
             reducer: reducer
         }
     }
-    pub fn subscribe(&self, listener: fn(Ref<T>)) -> &Store<T, U> {
-        self.listeners.borrow_mut().push(listener);
+
+    pub fn subscribe(&mut self, listener: fn(&T)) -> &Store<T, U> {
+        self.listeners.push(listener);
         self
     }
 
-    pub fn apply_middleware(&self, middleware:fn(&Store<T,U>, &U)) -> &Store<T,U> {
-        self.middlewares.borrow_mut().push(middleware);
+    pub fn apply_middleware(&mut self, middleware:fn(&Store<T,U>, &U)) -> &Store<T,U> {
+        self.middlewares.push(middleware);
         self
     }
 
-    pub fn get_state(&self) -> Ref<T> {
-        self.state.borrow()
+    pub fn get_state(&self) -> T {
+        self.state.borrow().inner_state.clone()
     }
 
     pub fn dispatch(&self, action:U) {
-        let stateUpdates:T = (self.reducer)(self.state.borrow(), &action);
-        self.state.borrow_mut().update_fields(stateUpdates);
+        let updated_state = (self.reducer)(&self.state.borrow().inner_state, &action);
+        self.state.borrow_mut().inner_state = updated_state;
 
-        for middleware in self.middlewares.borrow().iter(){
+        for middleware in &self.middlewares{
             middleware(self, &action);
         }
 
-        for listener in self.listeners.borrow().iter() {
-            listener(self.state.borrow())
+        for listener in &self.listeners {
+            listener(&self.state.borrow().inner_state)
         }
     }
 }
