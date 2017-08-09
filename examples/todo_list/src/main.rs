@@ -144,7 +144,7 @@ fn render(state: &State) {
 }
 
 #[allow(unused_must_use)]
-fn logger(state: Ref<State>, action: &Action) {
+fn logger(state:&State, dispatch:&Fn(Action), action: &Action) {
     let mut log_file = OpenOptions::new()
     .write(true)
     .create(true)
@@ -164,10 +164,16 @@ fn logger(state: Ref<State>, action: &Action) {
     log_file.write(b"----------------------------------------------------\n\n\n");
 }
 
+fn call_dispatch(state:&State, dispatch:&Fn(Action), action: &Action) {
+    println!("start");
+    dispatch(Visibility(ShowAll));
+    println!("end.");    
+}
+
 
 fn main() {
     let mut store = Store::create_store(reducer, State::with_defaults());
-    store.subscribe(render);
+    store.subscribe(render).apply_middleware(call_dispatch);
 
     print_instructions();
     loop {

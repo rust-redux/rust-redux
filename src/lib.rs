@@ -31,12 +31,12 @@ impl<T: Clone, U> Store<T, U> {
         }
     }
 
-    pub fn subscribe(&mut self, listener: fn(&T)) -> &Store<T, U> {
+    pub fn subscribe(&mut self, listener: fn(&T)) -> &mut Store<T, U> {
         self.listeners.push(listener);
         self
     }
 
-    pub fn apply_middleware(&mut self, middleware:fn(&T, &Fn(U), &U)) -> &Store<T,U> {
+    pub fn apply_middleware(&mut self, middleware:fn(&T, &Fn(U), &U)) -> &mut Store<T,U> {
         self.middlewares.push(middleware);
         self
     }
@@ -46,9 +46,10 @@ impl<T: Clone, U> Store<T, U> {
     }
 
     pub fn dispatch(&self, action:U) {
-        let updated_state = (self.reducer)(&self.state.borrow().inner_state, &action);
-        self.state.borrow_mut().inner_state = updated_state;
-
+        {
+            let updated_state = (self.reducer)(&self.state.borrow().inner_state, &action);
+            self.state.borrow_mut().inner_state = updated_state;
+        }
         for middleware in &self.middlewares{
             middleware(&self.state.borrow().inner_state, &|action:U|{
                 self.dispatch(action);

@@ -25,7 +25,7 @@ This is a standard store creation. Before creating a store you will need to crea
 ### 2. Creating State Model
 The State type seen below that is used in the todo_list example contains all parts of our rust-redux state.
 
-```
+```rust
 #[derive(Clone, Debug)]
 pub struct State {
     pub todos: Vec<Todo>,
@@ -47,7 +47,7 @@ Your state model does not have to be named "State" or have any specific methods 
 
 ### 3. Creating a Root Reducer
 You can think of root reducer as the rust-redux substitute for combineReducers in reduxjs. Our root reducer just needs to return our State model where each property in our model is set to the return value of its individual reducer (We'll talk more about individual state reducers later on). The root reducer must be of type: `fn(&T, U) -> T`
-```
+``` rust
 fn root_reducer(state: &State, action: Action) -> State {
     State {
         todos: todo_reducer(&state.todos, &action),
@@ -59,7 +59,7 @@ fn root_reducer(state: &State, action: Action) -> State {
 ### 4. Creating Actions
 Actions can be whatever you want them to be. It is only up to your individual reducers to decide how to handle them. The way we decided to build actions was using rust enums. They allow us to specify a type and a payload without adding all that extra syntax. Take a look at the Action type created in the to-do example.
 
-```
+``` rust
 #[derive(Clone, Debug)]
 pub enum Action {
     Todos(TodoAction),
@@ -86,7 +86,7 @@ You will notice that we had to create a generic Action wrapper around our other 
 ### 5. Creating Reducers
 Individual reducers will decide how you split up your store's state. Similar to reduxjs reducers should accept some state and an action. Let's look at an example.
 
-```
+``` rust
 fn todo_reducer(state: &Vec<Todo>, action: &Action) -> Vec<Todo> {
     let mut new_state: Vec<Todo> = state.clone();
 
@@ -118,7 +118,7 @@ Another aspect of reduxjs that we want to adapt is avoiding direct mutation of t
 ### 6. Putting it All Together
 Now that we have all of our pieces in place, let's subscribe, dispatch, and get our store's state!
 ### Dispatching Actions
-```
+``` rust
 use Action::*;
 fn main(){
 	let mut store = Store::create_store(reducer, State::with_defaults());
@@ -128,7 +128,7 @@ fn main(){
 
 ### Subscribing
 Subscribing allows us to have functions that listen to the store's state directly. Whenever an action is dispatched to the store, these functions are called again with the udpated state.
-```
+``` rust
 fn update_with_new_state(state: &State) {
 	let visibility = &state.visibility_filter;
 	println!("Visibility filter updated to:  {:?}", visibility);
@@ -147,7 +147,7 @@ fn main(){
 ```
 ### Getting State
 The store's get_state method returns an immutable reference to the current state in the rust-redux store.
-```
+``` rust
 fn main(){
 	let mut store = Store::create_store(reducer, State::with_defaults());
 	store.dispatch(Todos(Add("Learn about rust-redux"));
