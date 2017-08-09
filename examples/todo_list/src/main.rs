@@ -165,9 +165,7 @@ fn logger(state:&State, dispatch:&Fn(Action), action: &Action) {
 }
 
 fn call_dispatch(state:&State, dispatch:&Fn(Action), action: &Action) {
-    println!("start");
-    dispatch(Visibility(ShowAll));
-    println!("end.");    
+    dispatch(Visibility(ShowAll)); 
 }
 
 

@@ -46,10 +46,10 @@ impl<T: Clone, U> Store<T, U> {
     }
 
     pub fn dispatch(&self, action:U) {
-        {
-            let updated_state = (self.reducer)(&self.state.borrow().inner_state, &action);
-            self.state.borrow_mut().inner_state = updated_state;
-        }
+        
+        let updated_state = (self.reducer)(&self.state.borrow().inner_state, &action);
+        self.state.borrow_mut().inner_state = updated_state;
+
         for middleware in &self.middlewares{
             middleware(&self.state.borrow().inner_state, &|action:U|{
                 self.dispatch(action);
