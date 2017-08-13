@@ -8,7 +8,6 @@ use VisibilityFilter::*;
 
 use std::fs::OpenOptions;
 use std::io::prelude::*;
-use std::cell::Ref;
 
 #[derive(Clone, Debug)]
 pub struct State {
@@ -143,8 +142,8 @@ fn render(state: &State) {
     print_instructions();
 }
 
-#[allow(unused_must_use)]
-fn logger(state: Ref<State>, action: &Action) {
+#[allow(unused_must_use, dead_code, unused_variables)]
+fn logger(state:&State, dispatch:&Fn(Action), action: &Action) {
     let mut log_file = OpenOptions::new()
     .write(true)
     .create(true)
@@ -164,10 +163,17 @@ fn logger(state: Ref<State>, action: &Action) {
     log_file.write(b"----------------------------------------------------\n\n\n");
 }
 
+#[allow(dead_code, unused_variables)]
+fn call_dispatch(state:&State, dispatch:&Fn(Action), action: &Action) {
+    if let ShowCompleted = state.visibility_filter{
+        dispatch(Visibility(ShowAll));
+    }
+}
+
 
 fn main() {
     let mut store = Store::create_store(reducer, State::with_defaults());
-    store.subscribe(render);
+    store.subscribe(render).apply_middleware(call_dispatch);
 
     print_instructions();
     loop {
