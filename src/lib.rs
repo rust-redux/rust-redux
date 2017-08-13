@@ -15,8 +15,8 @@ impl <T:Clone> StateContainer<T> {
 #[allow(dead_code)]
 pub struct Store<T: Clone, U> {
     state: RefCell<StateContainer<T>>,
-    listeners: Vec<fn(T)>,
-    middlewares: Vec<fn(T, &Fn(U), &U)>,
+    listeners: Vec<fn(&T)>,
+    middlewares: Vec<fn(&T, &Fn(U), &U)>,
     reducer: fn(&T,&U) -> T,
 }
 
@@ -31,12 +31,12 @@ impl<T: Clone, U> Store<T, U> {
         }
     }
 
-    pub fn subscribe(&mut self, listener: fn(T)) -> &mut Store<T, U> {
+    pub fn subscribe(&mut self, listener: fn(&T)) -> &mut Store<T, U> {
         self.listeners.push(listener);
         self
     }
 
-    pub fn apply_middleware(&mut self, middleware:fn(T, &Fn(U), &U)) -> &mut Store<T,U> {
+    pub fn apply_middleware(&mut self, middleware:fn(&T, &Fn(U), &U)) -> &mut Store<T,U> {
         self.middlewares.push(middleware);
         self
     }
@@ -51,13 +51,13 @@ impl<T: Clone, U> Store<T, U> {
         self.state.borrow_mut().inner_state = updated_state;
 
         for middleware in &self.middlewares{
-            middleware(self.get_state(), &|action:U|{
+            middleware(&self.get_state(), &|action:U|{
                 self.dispatch(action);
             }, &action);
         }
 
         for listener in &self.listeners {
-            listener(self.get_state())
+            listener(&self.get_state())
         }
     }
 }
