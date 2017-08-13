@@ -126,7 +126,7 @@ fn invalid_command(command: &str) {
     println!("Invalid command: {}", command);
 }
 
-fn render(state: &State) {
+fn render(state: State) {
     let visibility = &state.visibility_filter;
     println!("\n\nTodo List:\n-------------------");
     for i in 0..state.todos.len() {
@@ -144,7 +144,7 @@ fn render(state: &State) {
 }
 
 #[allow(unused_must_use)]
-fn logger(state:&State, dispatch:&Fn(Action), action: &Action) {
+fn logger(state:State, dispatch:&Fn(Action), action: &Action) {
     let mut log_file = OpenOptions::new()
     .write(true)
     .create(true)
@@ -164,8 +164,11 @@ fn logger(state:&State, dispatch:&Fn(Action), action: &Action) {
     log_file.write(b"----------------------------------------------------\n\n\n");
 }
 
-fn call_dispatch(state:&State, dispatch:&Fn(Action), action: &Action) {
-    dispatch(Visibility(ShowAll)); 
+
+fn call_dispatch(state:State, dispatch:&Fn(Action), action: &Action) {
+    if let ShowCompleted = state.visibility_filter{
+        dispatch(Visibility(ShowAll));
+    }
 }
 
 
