@@ -127,7 +127,7 @@ fn main(){
 ```
 
 ### Subscribing
-Subscribing allows us to have functions that listen to the store's state directly. Whenever an action is dispatched to the store, these functions are called again with the udpated state.
+Subscribing allows us to have functions that listen to the store's state directly. Whenever an action is dispatched to the store, these functions are called again with the updated state.
 ```
 fn update_with_new_state(state: &State) {
 	let visibility = &state.visibility_filter;
