@@ -1,9 +1,15 @@
 [package]
 name = "rust_redux"
 version = "0.1.0"
-authors = ["Fredrik Andersson <fredrik.andersson@widespace.com>"]
+edition = "2021"
+authors = ["Fredrik Andersson <f.anderzon@gmail.com>"]
 repository = "https://github.com/fanderzon/rust-redux.git"
 license = "MIT"
 readme = "README.md"
+description = "A Redux-like state management library for Rust."
+categories = ["data-structures", "state-management", "algorithms"]
+keywords = ["redux", "state-management", "rust"]
+documentation = "https://docs.rs/rust_redux"
+homepage = "https://github.com/fanderzon/rust-redux"
 
 [dependencies]

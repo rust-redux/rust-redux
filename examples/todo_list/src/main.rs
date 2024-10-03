@@ -1,7 +1,8 @@
 extern crate rust_redux;
 
 use std::io;
-use rust_redux::{ Store };
+use std::sync::Arc;
+use rust_redux::{Store};
 use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
@@ -9,7 +10,7 @@ use VisibilityFilter::*;
 #[derive(Clone, Debug)]
 pub struct State {
     pub todos: Vec<Todo>,
-    pub visibility_filter: VisibilityFilter
+    pub visibility_filter: VisibilityFilter,
 }
 
 impl State {
@@ -80,17 +81,17 @@ fn todo_reducer(state: &Vec<Todo>, action: &Action) -> Vec<Todo> {
             Add(ref title) => {
                 let new_id = new_state.len() as i16 + 1;
                 new_state.push(Todo::new(new_id, title.to_string()))
-            },
+            }
             Toggle(todo_id) => {
                 if let Some(todo) = get_mut_todo(&mut new_state, todo_id) {
                     if todo.completed { todo.completed = false; } else { todo.completed = true; }
                 }
-            },
+            }
             Remove(todo_id) => {
                 if let Some(todo) = get_mut_todo(&mut new_state, todo_id) {
                     todo.deleted = true;
                 }
-            },
+            }
         },
         // If it's not a Todos action change nothing
         _ => (),
@@ -109,6 +110,18 @@ fn get_mut_todo(todos: &mut Vec<Todo>, todo_id: i16) -> Option<&mut Todo> {
     todos.iter_mut().find(|todo|todo.id == todo_id)
 }
 
+// Selector for getting visible todos based on the current visibility filter
+fn get_visible_todos(state: &State) -> Vec<&Todo> {
+    state.todos.iter()
+        .filter(|todo| !todo.deleted)
+        .filter(|todo| match state.visibility_filter {
+            VisibilityFilter::ShowAll => true,
+            VisibilityFilter::ShowActive => !todo.completed,
+            VisibilityFilter::ShowCompleted => todo.completed,
+        })
+        .collect()
+}
+
 fn print_todo(todo: &Todo) {
     let done = if todo.completed { "✔" } else { " " };
     println!("[{}] {} {}", done, todo.id, todo.title);
@@ -123,24 +136,28 @@ fn invalid_command(command: &str) {
 }
 
 fn render(state: &State) {
-    let visibility = &state.visibility_filter;
+    let visible_todos = get_visible_todos(state);
     println!("\n\nTodo List:\n-------------------");
-    for i in 0..state.todos.len() {
-        let todo = &state.todos[i];
-        if !todo.deleted {
-            match *visibility {
-                ShowAll => print_todo(&todo),
-                ShowCompleted => if todo.completed { print_todo(&todo) },
-                ShowActive => if !todo.completed { print_todo(&todo) },
-            }
-        }
+    for todo in visible_todos {
+        print_todo(&todo);
     }
-    println!("-------------------\nVisibility filter:  {:?}", visibility);
+    println!("-------------------\nVisibility filter:  {:?}", state.visibility_filter);
     print_instructions();
 }
 
+fn logger_middleware<S, A>(store: Arc<Store<S, A>>, action: A, next: Arc<dyn Fn(A) + Send + Sync>)
+where
+    S: Clone + Send + 'static + std::fmt::Debug,
+    A: Clone + Send + 'static + std::fmt::Debug,
+{
+    println!("Dispatching action: {:?}", action);
+    next(action);
+    println!("New state: {:?}", store.get_state());
+}
+
 fn main() {
-    let mut store = Store::create_store(reducer, State::with_defaults());
+    let mut store = Store::new(reducer, State::with_defaults())
+        .with_middleware(vec![Arc::new(logger_middleware)]);
     store.subscribe(render);
 
     print_instructions();
