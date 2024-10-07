@@ -2,10 +2,13 @@ extern crate rust_redux;
 
 use std::io;
 use std::sync::Arc;
+use tokio;
+use reqwest;
+use serde::{Deserialize, Serialize};
 use rust_redux::{Store};
-use Action::*;
 use TodoAction::*;
 use VisibilityFilter::*;
+use std::fmt;
 
 #[derive(Clone, Debug)]
 pub struct State {
@@ -41,8 +44,31 @@ impl Todo {
     }
 }
 
-#[derive(Clone, Debug)]
 pub enum Action {
+    Standard(StandardAction),
+    Thunk(Arc<dyn Fn(Arc<Store<State, Action>>) + Send + Sync>),
+}
+
+impl Clone for Action {
+    fn clone(&self) -> Self {
+        match self {
+            Action::Standard(standard_action) => Action::Standard(standard_action.clone()),
+            Action::Thunk(thunk) => Action::Thunk(Arc::clone(thunk)),
+        }
+    }
+}
+
+impl fmt::Debug for Action {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Action::Standard(standard_action) => write!(f, "Action::Standard({:?})", standard_action),
+            Action::Thunk(_) => write!(f, "Action::Thunk(...)"),
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+pub enum StandardAction {
     Todos(TodoAction),
     Visibility(VisibilityFilter),
 }
@@ -61,47 +87,41 @@ pub enum VisibilityFilter {
     ShowCompleted,
 }
 
-fn reducer(state: &State, action: Action) -> State {
-    // Always return a new state
+fn reducer(state: &State, action: &Action) -> State {
     State {
-        todos: todo_reducer(&state.todos, &action),
-        visibility_filter: visibility_reducer(&state.visibility_filter, &action),
+        todos: todo_reducer(&state.todos, action),
+        visibility_filter: visibility_reducer(&state.visibility_filter, action),
     }
 }
 
 fn todo_reducer(state: &Vec<Todo>, action: &Action) -> Vec<Todo> {
     let mut new_state: Vec<Todo> = state.clone();
 
-    // First we make sure it's a `Todos` action, otherwise return clone of incoming state
-    match *action {
-        Todos(ref todo_action) => match *todo_action {
-            // Pretty simple from here on, check the type of Todos enum type
-            // If Add push a new item, and if `Toggle` or `Remove` use our get_mut_todo
-            // helper function and then change a property on the todo
-            Add(ref title) => {
+    match action {
+        Action::Standard(StandardAction::Todos(todo_action)) => match todo_action {
+            Add(title) => {
                 let new_id = new_state.len() as i16 + 1;
                 new_state.push(Todo::new(new_id, title.to_string()))
             }
             Toggle(todo_id) => {
-                if let Some(todo) = get_mut_todo(&mut new_state, todo_id) {
-                    if todo.completed { todo.completed = false; } else { todo.completed = true; }
+                if let Some(todo) = get_mut_todo(&mut new_state, *todo_id) {
+                    todo.completed = !todo.completed;
                 }
             }
             Remove(todo_id) => {
-                if let Some(todo) = get_mut_todo(&mut new_state, todo_id) {
+                if let Some(todo) = get_mut_todo(&mut new_state, *todo_id) {
                     todo.deleted = true;
                 }
             }
         },
-        // If it's not a Todos action change nothing
         _ => (),
     }
-    return new_state;
+    new_state
 }
 
 fn visibility_reducer(state: &VisibilityFilter, action: &Action) -> VisibilityFilter {
-    match *action {
-        Visibility(ref vis_action) => vis_action.clone(),
+    match action {
+        Action::Standard(StandardAction::Visibility(vis_action)) => vis_action.clone(),
         _ => state.clone(),
     }
 }
@@ -123,12 +143,12 @@ fn get_visible_todos(state: &State) -> Vec<&Todo> {
 }
 
 fn print_todo(todo: &Todo) {
-    let done = if todo.completed { "✔" } else { " " };
+    let done = if todo.completed { "" } else { " " };
     println!("[{}] {} {}", done, todo.id, todo.title);
 }
 
 fn print_instructions() {
-    println!("\nAvailable commands: \nadd [text] - toggle [id] - remove [id]\nshow [all|active|completed]");
+    println!("\nAvailable commands: \nadd [text] - add-random - toggle [id] - remove [id]\nshow [all|active|completed]");
 }
 
 fn invalid_command(command: &str) {
@@ -145,20 +165,68 @@ fn render(state: &State) {
     print_instructions();
 }
 
-fn logger_middleware<S, A>(store: Arc<Store<S, A>>, action: A, next: Arc<dyn Fn(A) + Send + Sync>)
-where
-    S: Clone + Send + 'static + std::fmt::Debug,
-    A: Clone + Send + 'static + std::fmt::Debug,
-{
+fn thunk_middleware(
+    store: &Store<State, Action>,
+    action: &Action,
+    next: &dyn Fn(&Action),
+) {
+    match action {
+        Action::Thunk(thunk) => {
+            thunk(Arc::new(store.clone()));
+        },
+        Action::Standard(_) => next(action),
+    }
+}
+
+fn logger_middleware(
+    store: &Store<State, Action>,
+    action: &Action,
+    next: &dyn Fn(&Action),
+) {
     println!("Dispatching action: {:?}", action);
     next(action);
     println!("New state: {:?}", store.get_state());
 }
 
-fn main() {
-    let mut store = Store::new(reducer, State::with_defaults())
-        .with_middleware(vec![Arc::new(logger_middleware)]);
-    store.subscribe(render);
+#[derive(Serialize, Deserialize, Debug)]
+struct RandomTodo {
+    id: i32,
+    todo: String,
+    completed: bool,
+    #[serde(rename = "userId")]
+    user_id: i32,
+}
+
+async fn fetch_random_todo() -> Result<RandomTodo, reqwest::Error> {
+    let resp = reqwest::get("https://dummyjson.com/todos/random").await?;
+    resp.json::<RandomTodo>().await
+}
+
+fn add_random_todo(store: Arc<Store<State, Action>>) {
+    tokio::spawn(async move {
+        match fetch_random_todo().await {
+            Ok(random_todo) => {
+                let todo_title = random_todo.todo.clone();
+                store.dispatch(&Action::Standard(StandardAction::Todos(Add(todo_title))));
+                println!("Added random todo: {}", random_todo.todo);
+            }
+            Err(e) => println!("Failed to fetch random todo: {}", e),
+        }
+    });
+}
+
+#[tokio::main]
+async fn main() {
+    let store = Arc::new(
+        Store::new(reducer as fn(&State, &Action) -> State, State::with_defaults())
+            .with_middleware(vec![
+                Arc::new(logger_middleware),
+                Arc::new(thunk_middleware),
+            ])
+    );
+    
+    let store_clone = Arc::clone(&store);
+    store.subscribe(move |state| render(state));
 
     print_instructions();
     loop {
@@ -172,19 +240,21 @@ fn main() {
             0 => invalid_command(&command),
             _ => {
                 match command_parts[0] {
-                    // Since we prepared so well we just need to call dispatch on our store
-                    // With the right action
-                    "add" => store.dispatch( Todos(Add( command_parts[1..].join(" ").to_string() ))),
+                    "add" => store_clone.dispatch(&Action::Standard(StandardAction::Todos(Add(command_parts[1..].join(" ").to_string())))),
+                    "add-random" => {
+                        let thunk = Arc::new(|store: Arc<Store<State, Action>>| add_random_todo(store));
+                        store_clone.dispatch(&Action::Thunk(thunk));
+                    },
                     "remove" => if let Ok(num) = command_parts[1].parse::<i16>() {
-                        store.dispatch( Todos(Remove(num)));
+                        store_clone.dispatch(&Action::Standard(StandardAction::Todos(Remove(num))));
                     },
                     "toggle" => if let Ok(num) = command_parts[1].parse::<i16>() {
-                        store.dispatch( Todos(Toggle(num)));
+                        store_clone.dispatch(&Action::Standard(StandardAction::Todos(Toggle(num))));
                     },
                     "show" => match command_parts[1] {
-                        "all" => store.dispatch( Visibility(ShowAll) ),
-                        "active" => store.dispatch( Visibility(ShowActive) ),
-                        "completed" => store.dispatch( Visibility(ShowCompleted) ),
+                        "all" => store_clone.dispatch(&Action::Standard(StandardAction::Visibility(ShowAll))),
+                        "active" => store_clone.dispatch(&Action::Standard(StandardAction::Visibility(ShowActive))),
+                        "completed" => store_clone.dispatch(&Action::Standard(StandardAction::Visibility(ShowCompleted))),
                         _ => invalid_command(&command)
                     },
                     _ => invalid_command(&command),
